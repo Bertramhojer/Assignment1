@@ -97,15 +97,6 @@ is the project directory.
 pacman::p_load(tidyverse,janitor)
 ```
 
-    ## also installing the dependency 'snakecase'
-
-    ## 
-    ## The downloaded binary packages are in
-    ##  /var/folders/sq/76tpcqv94r15h2myhh5zqsgh0000gn/T//RtmpZrNCuZ/downloaded_packages
-
-    ## 
-    ## janitor installed
-
 Load the three data sets, after downloading them from dropbox and saving
 them in your working directory: \* Demographic data for the
 participants:
@@ -114,6 +105,12 @@ participants:
 <a href="https://www.dropbox.com/s/usyauqm37a76of6/LU_train.csv?dl=0" class="uri">https://www.dropbox.com/s/usyauqm37a76of6/LU_train.csv?dl=0</a>
 \* Word data:
 <a href="https://www.dropbox.com/s/8ng1civpl2aux58/token_train.csv?dl=0" class="uri">https://www.dropbox.com/s/8ng1civpl2aux58/token_train.csv?dl=0</a>
+
+``` r
+utterance_data <- read.csv("LU_train.csv")
+demographics_data <- read.csv("demo_train.csv")
+word_data <- read.csv("token_train.csv")
+```
 
 Explore the 3 datasets (e.g. visualize them, summarize them, etc.). You
 will see that the data is messy, since the psychologist collected the
@@ -141,12 +138,27 @@ or google “how to rename variables in R”. Or check the janitor R
 package. There are always multiple ways of solving any problem and no
 absolute best method.
 
+``` r
+# use the rename function to rename variable-names
+
+# 'Child.ID' of demographics_data has to be renamed to 'SUBJ'
+demographics_data <- rename(demographics_data, SUBJ = Child.ID)
+# 'Visit' of demographics to 'VISIT'
+demographics_data <- rename(demographics_data, VISIT = Visit)
+```
+
 2b. Find a way to homogeneize the way “visit” is reported (visit1
 vs. 1).
 
 Tip: The stringr package is what you need. str\_extract () will allow
 you to extract only the digit (number) from a string, by using the
 regular expression \\d.
+
+``` r
+# Extracting only numbers from a string using str_extract() with the \\d pattern
+utterance_data$VISIT <- str_extract(utterance_data$VISIT, "\\d")
+word_data$VISIT <- str_extract(word_data$VISIT, "\\d")
+```
 
 2c. We also need to make a small adjustment to the content of the
 Child.ID coloumn in the demographic data. Within this column, names that
@@ -159,6 +171,22 @@ Tip: stringr is helpful again. Look up str\_replace\_all Tip: You can
 either have one line of code for each child name that is to be changed
 (easier, more typing) or specify the pattern that you want to match
 (more complicated: look up “regular expressions”, but less typing)
+
+``` r
+# replacing the '.' with empty spaces to allow for merge of the different datasets
+utterance_data$SUBJ <- str_replace_all(utterance_data$SUBJ, "[[:punct:]]", "")
+demographics_data$SUBJ <- str_replace_all(demographics_data$SUBJ,"[[:punct:]]", "")
+word_data$SUBJ <- str_replace_all(word_data$SUBJ, "[[:punct:]]", "")
+```
+
+TEST-PLOT
+
+``` r
+ggplot(word_data, aes(VISIT, types_shared))+
+  geom_boxplot()
+```
+
+![](Assignment1_files/figure-markdown_github/unnamed-chunk-6-1.png)
 
 2d. Now that the nitty gritty details of the different data sets are
 fixed, we want to make a subset of each data set only containig the

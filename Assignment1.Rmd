@@ -72,7 +72,9 @@ Load the three data sets, after downloading them from dropbox and saving them in
 * Word data: https://www.dropbox.com/s/8ng1civpl2aux58/token_train.csv?dl=0
 
 ```{r}
-
+utterance_data <- read.csv("LU_train.csv")
+demographics_data <- read.csv("demo_train.csv")
+word_data <- read.csv("token_train.csv")
 ```
 
 Explore the 3 datasets (e.g. visualize them, summarize them, etc.). You will see that the data is messy, since the psychologist collected the demographic data, the linguist analyzed the length of utterance in May 2014 and the fumbling jack-of-all-trades analyzed the words several months later. 
@@ -92,6 +94,12 @@ Tip: look through the chapter on data transformation in R for data science (http
 
 
 ```{r}
+# use the rename function to rename variable-names
+
+# 'Child.ID' of demographics_data has to be renamed to 'SUBJ'
+demographics_data <- rename(demographics_data, SUBJ = Child.ID)
+# 'Visit' of demographics to 'VISIT'
+demographics_data <- rename(demographics_data, VISIT = Visit)
 
 ```
 
@@ -101,8 +109,9 @@ Tip: The stringr package is what you need. str_extract () will allow you to extr
 
 
 ```{r}
-
-
+# Extracting only numbers from a string using str_extract() with the \\d pattern
+utterance_data$VISIT <- str_extract(utterance_data$VISIT, "\\d")
+word_data$VISIT <- str_extract(word_data$VISIT, "\\d")
 ```
 
 2c. We also need to make a small adjustment to the content of the Child.ID coloumn in the demographic data. Within this column, names that are not abbreviations do not end with "." (i.e. Adam), which is the case in the other two data sets (i.e. Adam.). If The content of the two variables isn't identical the rows will not be merged.
@@ -113,8 +122,18 @@ Tip: You can either have one line of code for each child name that is to be chan
 
 
 ```{r}
-
+# replacing the '.' with empty spaces to allow for merge of the different datasets
+utterance_data$SUBJ <- str_replace_all(utterance_data$SUBJ, "[[:punct:]]", "")
+demographics_data$SUBJ <- str_replace_all(demographics_data$SUBJ,"[[:punct:]]", "")
+word_data$SUBJ <- str_replace_all(word_data$SUBJ, "[[:punct:]]", "")
 ```
+
+TEST-PLOT
+```{r}
+ggplot(word_data, aes(VISIT, types_shared))+
+  geom_boxplot()
+```
+
 
 2d. Now that the nitty gritty details of the different data sets are fixed, we want to make a subset of each data set only containig the variables that we wish to use in the final data set.
 For this we use the tidyverse package dplyr, which contains the function select(). 
