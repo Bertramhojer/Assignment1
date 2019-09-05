@@ -128,33 +128,26 @@ demographics_data$SUBJ <- str_replace_all(demographics_data$SUBJ,"[[:punct:]]", 
 word_data$SUBJ <- str_replace_all(word_data$SUBJ, "[[:punct:]]", "")
 ```
 
-TEST-PLOT
-```{r}
-ggplot(word_data, aes(VISIT, types_shared))+
-  geom_boxplot()
-```
-
-
 2d. Now that the nitty gritty details of the different data sets are fixed, we want to make a subset of each data set only containig the variables that we wish to use in the final data set.
 For this we use the tidyverse package dplyr, which contains the function select(). 
 
 The variables we need are: 
-* Child.ID, 
-* Visit, 
-* Diagnosis, 
-* Ethnicity, 
-* Gender, 
-* Age, 
-* ADOS,  
-* MullenRaw, 
-* ExpressiveLangRaw, 
-* Socialization
-* MOT_MLU, 
-* CHI_MLU, 
-* types_MOT, 
-* types_CHI, 
-* tokens_MOT, 
-* tokens_CHI.
+* Child.ID (renamed to SUBJ), all 
+* Visit, all
+* Diagnosis, demo
+* Ethnicity, demo
+* Gender, demo
+* Age, demo
+* ADOS, demo
+* MullenRaw, demo
+* ExpressiveLangRaw, demo
+* Socialization, demo
+* MOT_MLU, utterance
+* CHI_MLU, utterance
+* types_MOT, word
+* types_CHI, word
+* tokens_MOT, word
+* tokens_CHI, word
 
 Most variables should make sense, here the less intuitive ones. 
 * ADOS (Autism Diagnostic Observation Schedule) indicates the severity of the autistic symptoms (the higher the score, the worse the symptoms). Ref: https://link.springer.com/article/10.1023/A:1005592401947
@@ -168,7 +161,22 @@ Most variables should make sense, here the less intuitive ones.
 Feel free to rename the variables into something you can remember (i.e. nonVerbalIQ, verbalIQ)
 
 ```{r}
+# Renaming variables
+demographics_data <- rename(demographics_data, nonVerbalIQ = MullenRaw)
+demographics_data <- rename(demographics_data, verbalIQ = ExpressiveLangRaw)
+```
 
+```{r}
+# selecting important variables
+filter_demo <- demographics_data %>% 
+  select(SUBJ, VISIT, Diagnosis, Ethnicity, 
+         Gender, Age, ADOS, nonVerbalIQ, verbalIQ, Socialization)
+
+filter_utt <- utterance_data %>% 
+  select(SUBJ, VISIT, MOT_MLU, CHI_MLU)
+
+filter_word <- word_data %>% 
+  select(SUBJ, VISIT, types_MOT, types_CHI, tokens_MOT, tokens_CHI)
 ```
 
 2e. Finally we are ready to merge all the data sets into just one. 
@@ -178,8 +186,18 @@ Some things to pay attention to:
 * make sure to understand whether (and if so why) there are NAs in the dataset (e.g. some measures were not taken at all visits, some recordings were lost or permission to use was withdrawn)
 
 ```{r}
+# checking the classification of variables in dataframes
+str(filter_demo)
+str(filter_utt)
+str(filter_word)
 
+# changing the class of visit in two dataframes from character to integer
+filter_utt$VISIT <- as.integer(filter_utt$VISIT)
+filter_word$VISIT <- as.integer(filter_word$VISIT)
 
+# merging data frames
+merged_data <- merge(filter_demo, filter_utt)
+data <- merge(merged_data, filter_word)
 ```
 
 

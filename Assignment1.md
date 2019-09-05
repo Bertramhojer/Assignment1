@@ -179,24 +179,17 @@ demographics_data$SUBJ <- str_replace_all(demographics_data$SUBJ,"[[:punct:]]", 
 word_data$SUBJ <- str_replace_all(word_data$SUBJ, "[[:punct:]]", "")
 ```
 
-TEST-PLOT
-
-``` r
-ggplot(word_data, aes(VISIT, types_shared))+
-  geom_boxplot()
-```
-
-![](Assignment1_files/figure-markdown_github/unnamed-chunk-6-1.png)
-
 2d. Now that the nitty gritty details of the different data sets are
 fixed, we want to make a subset of each data set only containig the
 variables that we wish to use in the final data set. For this we use the
 tidyverse package dplyr, which contains the function select().
 
-The variables we need are: \* Child.ID, \* Visit, \* Diagnosis, \*
-Ethnicity, \* Gender, \* Age, \* ADOS,  
-\* MullenRaw, \* ExpressiveLangRaw, \* Socialization \* MOT\_MLU, \*
-CHI\_MLU, \* types\_MOT, \* types\_CHI, \* tokens\_MOT, \* tokens\_CHI.
+The variables we need are: \* Child.ID (renamed to SUBJ), all \* Visit,
+all \* Diagnosis, demo \* Ethnicity, demo \* Gender, demo \* Age, demo
+\* ADOS, demo \* MullenRaw, demo \* ExpressiveLangRaw, demo \*
+Socialization, demo \* MOT\_MLU, utterance \* CHI\_MLU, utterance \*
+types\_MOT, word \* types\_CHI, word \* tokens\_MOT, word \*
+tokens\_CHI, word
 
 Most variables should make sense, here the less intuitive ones. \* ADOS
 (Autism Diagnostic Observation Schedule) indicates the severity of the
@@ -217,6 +210,25 @@ responsiveness, as measured by Vineland
 Feel free to rename the variables into something you can remember
 (i.e. nonVerbalIQ, verbalIQ)
 
+``` r
+# Renaming variables
+demographics_data <- rename(demographics_data, nonVerbalIQ = MullenRaw)
+demographics_data <- rename(demographics_data, verbalIQ = ExpressiveLangRaw)
+```
+
+``` r
+# selecting important variables
+filter_demo <- demographics_data %>% 
+  select(SUBJ, VISIT, Diagnosis, Ethnicity, 
+         Gender, Age, ADOS, nonVerbalIQ, verbalIQ, Socialization)
+
+filter_utt <- utterance_data %>% 
+  select(SUBJ, VISIT, MOT_MLU, CHI_MLU)
+
+filter_word <- word_data %>% 
+  select(SUBJ, VISIT, types_MOT, types_CHI, tokens_MOT, tokens_CHI)
+```
+
 2e. Finally we are ready to merge all the data sets into just one.
 
 Some things to pay attention to: \* make sure to check that the merge
@@ -224,6 +236,55 @@ has included all relevant data (e.g. by comparing the number of rows) \*
 make sure to understand whether (and if so why) there are NAs in the
 dataset (e.g. some measures were not taken at all visits, some
 recordings were lost or permission to use was withdrawn)
+
+``` r
+# checking the classification of variables in dataframes
+str(filter_demo)
+```
+
+    ## 'data.frame':    372 obs. of  10 variables:
+    ##  $ SUBJ         : chr  "AA" "AD" "AD" "AD" ...
+    ##  $ VISIT        : int  1 1 2 3 4 5 6 1 2 3 ...
+    ##  $ Diagnosis    : Factor w/ 2 levels "A","B": 2 2 2 2 2 2 2 2 2 2 ...
+    ##  $ Ethnicity    : Factor w/ 12 levels "African American",..: 9 9 9 9 9 9 9 9 9 9 ...
+    ##  $ Gender       : int  1 1 1 1 1 1 1 2 2 2 ...
+    ##  $ Age          : num  18.1 19.8 23.9 27.7 32.9 ...
+    ##  $ ADOS         : int  15 0 NA NA NA 0 NA 1 NA NA ...
+    ##  $ nonVerbalIQ  : int  NA 28 NA NA 33 NA 42 29 NA NA ...
+    ##  $ verbalIQ     : int  NA 14 NA NA NA NA 44 18 NA NA ...
+    ##  $ Socialization: int  104 108 110 109 102 107 100 88 89 91 ...
+
+``` r
+str(filter_utt)
+```
+
+    ## 'data.frame':    352 obs. of  4 variables:
+    ##  $ SUBJ   : chr  "AD" "AD" "AD" "AD" ...
+    ##  $ VISIT  : chr  "1" "2" "3" "4" ...
+    ##  $ MOT_MLU: num  3.62 3.86 4.32 4.42 5.21 ...
+    ##  $ CHI_MLU: num  1.25 1.01 1.56 2.25 3.24 ...
+
+``` r
+str(filter_word)
+```
+
+    ## 'data.frame':    352 obs. of  6 variables:
+    ##  $ SUBJ      : chr  "AD" "AD" "AD" "AD" ...
+    ##  $ VISIT     : chr  "1" "2" "3" "4" ...
+    ##  $ types_MOT : int  378 403 455 533 601 595 334 464 482 449 ...
+    ##  $ types_CHI : int  14 18 97 133 182 210 51 149 164 206 ...
+    ##  $ tokens_MOT: int  1835 2160 2149 2260 2553 2586 2674 2694 2630 2397 ...
+    ##  $ tokens_CHI: int  139 148 255 321 472 686 260 530 542 754 ...
+
+``` r
+# changing the class of visit in two dataframes from character to integer
+filter_utt$VISIT <- as.integer(filter_utt$VISIT)
+filter_word$VISIT <- as.integer(filter_word$VISIT)
+
+# merging data frames
+merged_data <- merge(filter_demo, filter_utt)
+data <- merge(merged_data, filter_word)
+```
 
 2f. Only using clinical measures from Visit 1 In order for our models to
 be useful, we want to miimize the need to actually test children as they
