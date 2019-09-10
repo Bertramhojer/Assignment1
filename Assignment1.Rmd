@@ -63,7 +63,7 @@ If you're not in a project in Rstudio, make sure to set your working directory h
 If you created an RStudio project, then your working directory (the directory with your data and code for these assignments) is the project directory.
 
 ```{r}
-pacman::p_load(tidyverse,janitor)
+pacman::p_load(tidyverse,janitor, BiocManager, anonymizer)
 ```
 
 Load the three data sets, after downloading them from dropbox and saving them in your working directory:
@@ -195,24 +195,29 @@ str(filter_word)
 filter_utt$VISIT <- as.integer(filter_utt$VISIT)
 filter_word$VISIT <- as.integer(filter_word$VISIT)
 
-# merging data frames
-merged_data <- merge(filter_demo, filter_utt)
-data <- merge(merged_data, filter_word)
+# merging data frames with all values - even the extras from demographics
+merged_initial <- merge(filter_demo, filter_word, by=c("SUBJ", "VISIT"), all = T)
+data <- merge(merged_initial, filter_utt, by=c("SUBJ", "VISIT"), all = T)
 ```
 
 
 2f. Only using clinical measures from Visit 1
-In order for our models to be useful, we want to miimize the need to actually test children as they develop. In other words, we would like to be able to understand and predict the children's linguistic development after only having tested them once. Therefore we need to make sure that our ADOS, MullenRaw, ExpressiveLangRaw and Socialization variables are reporting (for all visits) only the scores from visit 1.
+In order for our models to be useful, we want to minimize the need to actually test children as they develop. In other words, we would like to be able to understand and predict the children's linguistic development after only having tested them once. Therefore we need to make sure that our ADOS, MullenRaw(nonVerbalIQ), ExpressiveLangRaw(verbalIQ) and Socialization variables are reporting (for all visits) only the scores from visit 1.
 
 A possible way to do so:
 * create a new dataset with only visit 1, child id and the 4 relevant clinical variables to be merged with the old dataset
 * rename the clinical variables (e.g. ADOS to ADOS1) and remove the visit (so that the new clinical variables are reported for all 6 visits)
 * merge the new dataset with the old
 
-
-
 ```{r}
+# create a dataframe with data only from visit 1
+data_visit1 <- demographics_data %>%
+  filter(VISIT == "1") %>% 
+  select(SUBJ, ADOS, nonVerbalIQ, verbalIQ, Socialization) %>% 
+  rename(ADOS1 = ADOS, nonVerbalIQ1 = nonVerbalIQ, verbalIQ1 = verbalIQ, Socialization1 = Socialization)
 
+# merging visit1_dataframe with overall cleaned data-set
+data_final <- merge(data, data_visit1, by = c("SUBJ"), All = T)
 ```
 
 2g. Final touches
@@ -223,7 +228,16 @@ Now we want to
 * Save the data set using into a csv file. Hint: look into write.csv()
 
 ```{r}
+# anonymization of names
+df_anon <- data_final
+df_anon$SUBJ <- as.numeric(as.factor(df_anon$SUBJ))
 
+# changing variable values
+df_anon$Gender <- as.factor(df_anon$Gender) # use as.factor to use levels()
+
+levels(df_anon$Gender) <- c("F", "M") # changing from 1, 2 to F, M
+
+levels(df_anon$Diagnosis) <- c("ASD", "TD") # changing from A, B to ASD, TD
 ```
 
 
