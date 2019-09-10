@@ -63,7 +63,7 @@ If you're not in a project in Rstudio, make sure to set your working directory h
 If you created an RStudio project, then your working directory (the directory with your data and code for these assignments) is the project directory.
 
 ```{r}
-pacman::p_load(tidyverse,janitor, BiocManager, anonymizer)
+pacman::p_load(tidyverse, janitor)
 ```
 
 Load the three data sets, after downloading them from dropbox and saving them in your working directory:
@@ -95,7 +95,6 @@ Tip: look through the chapter on data transformation in R for data science (http
 
 ```{r}
 # use the rename function to rename variable-names
-
 # 'Child.ID' of demographics_data has to be renamed to 'SUBJ'
 demographics_data <- rename(demographics_data, SUBJ = Child.ID)
 # 'Visit' of demographics to 'VISIT'
