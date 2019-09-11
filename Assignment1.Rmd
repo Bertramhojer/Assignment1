@@ -237,6 +237,8 @@ df_anon$Gender <- as.factor(df_anon$Gender) # use as.factor to use levels()
 levels(df_anon$Gender) <- c("F", "M") # changing from 1, 2 to F, M
 
 levels(df_anon$Diagnosis) <- c("ASD", "TD") # changing from A, B to ASD, TD
+
+write.csv(df_anon, file = "data_assignment1.csv") # writing a csv-file to the working directory
 ```
 
 
@@ -252,8 +254,32 @@ List all kids who:
 3. have not completed all trials. Tip: Use pipes to solve this
 
 ```{r}
+# Part 1
+CHI1 <- df_anon %>%
+  group_by(SUBJ) %>% 
+  filter(mean(CHI_MLU) > 2.7) %>%
+  select(SUBJ) %>% 
+  unique() #filtering out any subjects with an MLU across visit below 2.7
+
+# Part 2
+CHI2 <- df_anon %>% 
+  filter(VISIT == "1") %>% 
+  filter(CHI_MLU < 1.5) %>% 
+  unique() # filtering out any subjects  with an MLU above 1.5 morphemes at first visit
 
 
+# Part 3 - checking if all visits were done
+CHI3 <- df_anon %>% 
+  group_by(SUBJ) %>% 
+  filter(n() == 6) %>%
+  select(SUBJ) %>% 
+  unique()
+
+# Part 3 - checking if there are any NAs in CHI_MLU
+CHI3.1 <- df_anon %>%
+  filter(is.na(CHI_MLU)) %>% 
+  select(SUBJ) %>% 
+  unique()
 ```
 
 
@@ -263,8 +289,17 @@ USING ARRANGE
 2. Sort kids to find the kid who produced the least amount of words on the 1st visit.
 
 ```{r}
+# part 1
+tokens_df1 <- df_anon %>% 
+  filter(VISIT == 6) %>% 
+  arrange(tokens_CHI)
+# subject 60 produced the most words on the 6th visit with a total of 1294
 
-
+# part 2
+tokens_df2 <- df_anon %>% 
+  filter(VISIT == 1) %>% 
+  arrange(tokens_CHI)
+# subject 62 produced the least words on the 1st visit with a total of 0 words
 ```
 
 USING SELECT
@@ -273,17 +308,34 @@ USING SELECT
 2. What happens if you include the name of a variable multiple times in a select() call?
 
 ```{r}
+# part 1
+subset_ASD <- df_anon %>% 
+  filter(Diagnosis == "ASD") %>% # filtering out people without ASD
+  select(Diagnosis, CHI_MLU, tokens_CHI) # selecting the wanted columns
 
+# part 2
+subset_ASD <- df_anon %>% 
+  select(Diagnosis, CHI_MLU, tokens_CHI, Diagnosis) # the second call of the recurring variable is ignored
 ```
 
 
 USING MUTATE, SUMMARISE and PIPES
 1. Add a column to the data set that represents the mean number of words spoken during all visits.
-2. Use the summarise function and pipes to add an column in the data set containing the mean amount of words produced by each trial across all visits. HINT: group by Child.ID 
+2. Use the summarise function and pipes to add a column in the data set containing the mean amount of words produced by each trial across all visits. HINT: group by Child.ID 
 3. The solution to task above enables us to assess the average amount of words produced by each child. Why don't we just use these average values to describe the language production of the children? What is the advantage of keeping all the data?
 
 ```{r}
+# part 1
+df_anon <- df_anon %>% 
+  group_by(VISIT) %>% 
+  mutate(mean_visits = mean(tokens_CHI)) # taking the mean over-all words used pr. visit for all the trials including all children
 
+# part 2
+df_anon <- df_anon %>% 
+  group_by(SUBJ) %>% 
+  mutate(mean_overall = mean(tokens_CHI)) # taking the mean over-all words used and creating a new variable called mean_overall and adding it to the dataframe
 
+# part 3
+# Keeping the data allows us to look at the individual development. If we simply look at a mean we lose a lot of data-points. While this may be easier in creating a model, we can always get around the assumption of independence by creating a mixed effects model that accounts for individual intercepts for each subject by each trial.
 ```
 
